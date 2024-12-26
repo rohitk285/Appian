@@ -54,9 +54,7 @@ LoRA-adapters
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/yourusername/document-processing.git
-   ``
-   cd document-processing
-   
+   ```   
 2. **Google Cloud Console**:
    - Configure blob storage.
    - Set up authentication using a service account key.
