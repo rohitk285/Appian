@@ -53,7 +53,7 @@ pip install -r requirements.txt
 ### Setup
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/document-processing.git
+   git clone https://github.com/rohitk285/Appian.git
    ```   
 2. **Google Cloud Console**:
    - Configure blob storage.
