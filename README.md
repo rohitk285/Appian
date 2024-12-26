@@ -40,7 +40,6 @@ pip install -r requirements.txt
 - transformers>=4.25.0
 - fastapi
 - uvicorn
-- tesseract-ocr
 - pytesseract
 - opencv-python
 - numpy
@@ -58,14 +57,11 @@ pip install -r requirements.txt
 2. **Google Cloud Console**:
    - Configure blob storage.
    - Set up authentication using a service account key.
-3. **Tesseract OCR**:
-   - Install Tesseract OCR ([installation guide](https://github.com/tesseract-ocr/tesseract)).
-   - Ensure the binary is accessible in the system path.
-4. **Environment Variables**:
-   - Create a .env file to store sensitive configurations:
-   STORAGE_BUCKET_NAME="your-bucket-name"
-   MONGO_URI="your-mongo-db-uri"
-   SERVICE_ACCOUNT_FILE="your-service-account-file-path"
+3. **Environment Variables**:
+   Create a .env file to store sensitive configurations:
+   - STORAGE_BUCKET_NAME="your-bucket-name"
+   - MONGO_URI="your-mongo-db-uri"
+   - SERVICE_ACCOUNT_FILE="your-service-account-file-path"
 
    
 
