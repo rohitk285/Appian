@@ -34,20 +34,20 @@ pip install -r requirements.txt
 ```
 
 *requirements.txt*:
-text
-torch>=1.12.1
-torchvision
-transformers>=4.25.0
-fastapi
-uvicorn
-tesseract-ocr
-pytesseract
-opencv-python
-numpy
-pandas
-google-cloud-storage
-scipy
-LoRA-adapters
+- text
+- torch>=1.12.1
+- torchvision
+- transformers>=4.25.0
+- fastapi
+- uvicorn
+- tesseract-ocr
+- pytesseract
+- opencv-python
+- numpy
+- pandas
+- google-cloud-storage
+- scipy
+- LoRA-adapters
 
 
 ### Setup
