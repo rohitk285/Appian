@@ -1,10 +1,16 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const cors = require('cors');
 const Document = require("./models/documentModel");
 require("dotenv").config();
 
 const app = express();
+
+app.use(cors({
+    origin: 'http://localhost:5173', // Allow only the frontend's domain
+    methods: ['GET', 'POST'], // Allow specific methods
+  }));
 
 // Middleware
 app.use(bodyParser.json());
@@ -69,6 +75,31 @@ app.post("/pushDetails", async (req, res) => {
   } catch (error) {
     console.error("Error processing document data:", error);
     res.status(500).json({ error: "Failed to process document data" });
+  }
+});
+
+app.get("/getUserDetails", async (req, res) => {
+  try {
+    const { name } = req.query; // Get the 'name' query parameter
+
+    if (!name) return res.status(400).json({ error: "Name is required" });
+
+    // Find document by name
+    const userDocument = await Document.find({
+      name: { $regex: name, $options: "i" },
+    });
+
+    if (userDocument.length === 0)
+      return res.status(404).json({ error: "User not found" });
+
+    // Return user details
+    return res.status(200).json({
+      message: "User details fetched successfully",
+      data: userDocument,
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ error: "Failed to fetch user details" });
   }
 });
 

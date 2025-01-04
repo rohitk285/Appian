@@ -1,8 +1,14 @@
 from flask import Flask, jsonify, request
 import random
 import requests
+import os
+from flask_cors import CORS
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 app = Flask(__name__)
+CORS(app)
 
 # Sample data array
 data_array = [
@@ -116,6 +122,28 @@ data_array = [
   }
 ]
 
+# Google Drive API setup
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SERVICE_ACCOUNT_FILE = 'keys/appian-445718-e0ab73bfc265.json' # Replace with your service account key file path
+# print("SERVICE_ACCOUNT_FILE:", os.getenv('SERVICE_ACCOUNT_FILE'))
+
+# Authenticate using the service account
+credentials = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+drive_service = build('drive', 'v3', credentials=credentials)
+
+# Function to upload file to Google Drive
+def upload_to_drive(file_path, file_name):
+    try:
+        file_metadata = {'name': file_name}
+        media = MediaFileUpload(file_path, mimetype='application/pdf')
+        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        return file.get('id')
+    except Exception as e:
+        print(f"Error uploading file to Google Drive: {e}")
+        return None
+
 @app.route('/', methods=['GET'])
 def test():
     return jsonify({"message": "Flask server is running"}), 200
@@ -123,19 +151,27 @@ def test():
 @app.route('/uploadDetails', methods=['POST'])
 def upload_details():
     try:
-        # Select a random object from the array
-        # selected_data = random.choice(data_array)
-        selected_data = data_array[3]
+        files = request.files
+        uploaded_files = []
+        for file_key, file in files.items():
+            file_path = f"temp/{file.filename}"
+            file.save(file_path)
+            # Upload to Google Drive
+            drive_file_id = upload_to_drive(file_path, file.filename)
+            if drive_file_id:
+                uploaded_files.append({"file_name": file.filename, "drive_file_id": drive_file_id})
+                os.remove(file_path)  # Remove the local file after uploading
 
-        # Send the selected data to the Express.js /pushDetails endpoint
+        # After uploading to Google Drive, proceed with the existing logic
+        selected_data = random.choice(data_array)
         express_url = "http://localhost:3000/pushDetails"
         response = requests.post(express_url, json=selected_data)
 
-        # Check if the Express.js server responded successfully
-        if response.status_code == 200:
+        if response.status_code in [200, 201]:
             return jsonify({
-                "message": "Data sent to /pushDetails successfully",
-                "express_response": response.json()
+                "message": "Data sent to /pushDetails and files uploaded to Google Drive successfully",
+                "express_response": response.json(),
+                "uploaded_files": uploaded_files
             }), response.status_code
         else:
             return jsonify({

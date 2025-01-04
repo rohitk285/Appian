@@ -52,7 +52,8 @@ const UploadPage = () => {
         formDataToSend.append(`file_${index}`, file);
       });
 
-      const response = await fetch("http://localhost:5000/upload", {
+      // Send files to backend
+      const response = await fetch("http://localhost:5000/uploadDetails", {
         method: "POST",
         body: formDataToSend,
       });
@@ -124,7 +125,7 @@ const UploadPage = () => {
               fontWeight: "bold",
               color: "#FFFFFF",
               marginBottom: 3,
-              fontFamily: "Oswald"
+              fontFamily: "Oswald",
             }}
           >
             Upload Details
