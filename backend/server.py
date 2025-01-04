@@ -1,150 +1,149 @@
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.oauth2 import service_account
-
-# Load environment variables from .env file
-load_dotenv()
+from flask import Flask, jsonify, request
+import random
+import requests
 
 app = Flask(__name__)
-CORS(app)
 
-# MongoDB Atlas connection string
-MONGO_URI = os.getenv("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client.get_database("user_uploads")  # Replace with your database name
-uploads_collection = db.uploads  # Collection to store uploads data
+# Sample data array
+data_array = [
+  {
+    "document_type": "aadhaar",
+    "named_entities": {
+      "name": "Rahul Rajendra prasad Mishra",
+      "dob": "25/05/1985",
+      "gender": "Male",
+      "aadhaar_number": "2932 1448 0395",
+      "vid": "9155 9158 0007 4305",
+      "issue_date": "25/05/2019"
+    }
+  },
+  {
+    "document_type": "cheque",
+    "named_entities": {
+      "name": "Jane Doe",
+      "address": "123 Great Linclon Road Miami MA 11223",
+      "cheque_number": "A1234",
+      "date": "26/06/2024",
+      "payee": "Cairo Mohammed",
+      "amount": "$2200",
+      "bank": "Miami City Saving Union",
+      "branch": "Miami Centre Branch Highland and Avenue 123 Miami USA"
+    }
+  },
+  {
+    "document_type": "pan",
+    "named_entities": {
+      "name": "Amardeep Singh",
+      "father_name": "Surjit Singh",
+      "dob": "09/11/1995",
+      "pan_number": "LIWPS9203C"
+    }
+  },
+  {
+    "document_type": "credit card",
+    "named_entities": {
+      "name": "CF Frost",
+      "card_number": "3159 876543 21001",
+      "expiry_date": "10/28",
+      "issuer": "American Express"
+    }
+  },
+  {
+    "document_type": "aadhaar",
+    "named_entities": {
+      "name": "Aarav Kapoor",
+      "dob": "14/02/1990",
+      "gender": "Male",
+      "aadhaar_number": "7894 5623 1478",
+      "vid": "1234 5678 9012 3456",
+      "issue_date": "14/02/2020"
+    }
+  },
+  {
+    "document_type": "cheque",
+    "named_entities": {
+      "name": "Neha Sharma",
+      "address": "45 Elite Avenue Pune MH 411045",
+      "cheque_number": "B5678",
+      "date": "30/09/2023",
+      "payee": "Amardeep Singh",
+      "amount": "$1500",
+      "bank": "Pune City Cooperative Bank",
+      "branch": "Pune Elite Branch"
+    }
+  },
+  {
+    "document_type": "pan",
+    "named_entities": {
+      "name": "Jane Doe",
+      "father_name": "Michael Doe",
+      "dob": "12/08/1982",
+      "pan_number": "HGXPS3452K"
+    }
+  },
+  {
+    "document_type": "credit card",
+    "named_entities": {
+      "name": "Neha Sharma",
+      "card_number": "5678 4321 2109 8765",
+      "expiry_date": "07/25",
+      "issuer": "MasterCard"
+    }
+  },
+  {
+    "document_type": "cheque",
+    "named_entities": {
+      "name": "Michael Doe",
+      "address": "1234 Main St, New York, NY, 10001",
+      "cheque_number": "C9012",
+      "date": "01/12/2023",
+      "payee": "Aarav Kapoor",
+      "amount": "$5000",
+      "bank": "NY State Bank",
+      "branch": "NYC Branch"
+    }
+  },
+  {
+    "document_type": "aadhaar",
+    "named_entities": {
+      "name": "CF Frost",
+      "dob": "1980",
+      "gender": "Male",
+      "aadhaar_number": "6543 3210 9087",
+      "vid": "2109 8765 4321 1098",
+      "issue_date": "1985"
+    }
+  }
+]
 
-# Google Drive API setup
-SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
-drive_service = build('drive', 'v3', credentials=credentials)
+@app.route('/', methods=['GET'])
+def test():
+    return jsonify({"message": "Flask server is running"}), 200
 
-# Allowed file extensions
-ALLOWED_EXTENSIONS = {'pdf'}
-
-# Function to check if the file has an allowed extension
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Function to upload a file to Google Drive
-def upload_to_google_drive(file_path, file_name):
+@app.route('/uploadDetails', methods=['POST'])
+def upload_details():
     try:
-        file_metadata = {'name': file_name}
-        media = MediaFileUpload(file_path, mimetype='application/pdf')
+        # Select a random object from the array
+        # selected_data = random.choice(data_array)
+        selected_data = data_array[3]
 
-        # Upload file to Google Drive
-        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        # Send the selected data to the Express.js /pushDetails endpoint
+        express_url = "http://localhost:3000/pushDetails"
+        response = requests.post(express_url, json=selected_data)
 
-        # Set file permissions to make it publicly accessible
-        file_id = file.get('id')
-        drive_service.permissions().create(
-            fileId=file_id,
-            body={'type': 'anyone', 'role': 'reader'}  # Public access
-        ).execute()
-
-        # Generate and return previewable link
-        return f"https://drive.google.com/file/d/{file_id}/preview"
-    except Exception as e:
-        print(f"Error uploading to Google Drive: {e}")
-        raise
-
-@app.route("/upload", methods=["POST"])
-def upload_data():
-    try:
-        data = request.form
-        name = data.get('name')
-        dob = data.get('dob')
-
-        if not name or not dob:
-            return jsonify({"error": "Name and Date of Birth are required"}), 400
-
-        # List to store links of uploaded files
-        document_links = []
-
-        # Process uploaded files
-        for file_key in request.files:
-            file = request.files.get(file_key)
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join("temp", filename)
-                file.save(file_path)
-                file_link = upload_to_google_drive(file_path, filename)
-                document_links.append(file_link)
-                os.remove(file_path)  # Clean up temporary file
-
-        if not document_links:
-            return jsonify({"error": "No valid files uploaded."}), 400
-
-        # Check if the user already exists
-        existing_user = uploads_collection.find_one({"name": name, "dob": dob})
-
-        if existing_user:
-            # If user exists, append new file links to the documents array
-            uploads_collection.update_one(
-                {"_id": existing_user["_id"]},
-                {"$push": {"documents": {"$each": document_links}}}
-            )
-            message = "Files uploaded successfully and added to existing user."
+        # Check if the Express.js server responded successfully
+        if response.status_code == 200:
+            return jsonify({
+                "message": "Data sent to /pushDetails successfully",
+                "express_response": response.json()
+            }), response.status_code
         else:
-            # If user does not exist, create a new entry with the uploaded files
-            user_data = {
-                "name": name,
-                "dob": dob,
-                "documents": document_links  # Add all uploaded file URLs to documents
-            }
-
-            uploads_collection.insert_one(user_data)
-            message = "New user created and files uploaded successfully."
-
-        return jsonify({"message": message}), 200
-
+            return jsonify({
+                "message": "Failed to send data to /pushDetails",
+                "express_response": response.text
+            }), response.status_code
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": f"Failed to upload data: {str(e)}"}), 500
-
-@app.route("/getUserDetails", methods=["POST"])
-def get_user_details():
-    try:
-        data = request.get_json()
-        name = data.get("name")
-        dob = data.get("dob")
-
-        if not name or not dob:
-            return jsonify({"error": "Name and Date of Birth are required"}), 400
-
-        user_data = uploads_collection.find_one({"name": name, "dob": dob})
-
-        if not user_data:
-            return jsonify({"error": "No user found with the provided details"}), 404
-
-        # Retrieve the documents (links) associated with the user
-        documents = user_data.get("documents", [])
-
-        # Return the full user data along with their associated document links
-        return jsonify({
-            "userData": {
-                "name": user_data["name"],
-                "dob": user_data["dob"],
-                "aadharNumber": user_data["aadharNumber"],
-                "panNumber": user_data["panNumber"],
-                "documents": documents  # Include the array of document links
-            }
-        }), 200
-
-    except Exception as e:
-        return jsonify({"error": f"Failed to retrieve user details: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Create temp directory if not exists
-    if not os.path.exists("temp"):
-        os.makedirs("temp")
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
