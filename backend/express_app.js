@@ -1,20 +1,22 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const cors = require('cors');
+const cors = require("cors");
 const Document = require("./models/documentModel");
-const Aadhar = require('./models/aadharModel');
-const Pan = require('./models/panModel');
-const CreditCard = require('./models/creditCardModel');
-const Cheque = require('./models/chequeModel');
+const Aadhar = require("./models/aadharModel");
+const Pan = require("./models/panModel");
+const CreditCard = require("./models/creditCardModel");
+const Cheque = require("./models/chequeModel");
 require("dotenv").config();
 
 const app = express();
 
-app.use(cors({
-    origin: 'http://localhost:5173', // Allow only the frontend's domain
-    methods: ['GET', 'POST'], // Allow specific methods
-  }));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow only the frontend's domain
+    methods: ["GET", "POST"], // Allow specific methods
+  })
+);
 
 // Middleware
 app.use(bodyParser.json());
@@ -67,13 +69,17 @@ app.post("/pushDetails", async (req, res) => {
       return res.status(200).json({ message: "Document updated successfully" });
     } else {
       // Create a new document if not found
-      const newDocument = new Document({
-        name: named_entities.Name, // Extract and set the name
-        document_type: [document_type], // Start with an array for document_type
-        named_entities,
-      });
+      // const newDocument = new Document({
+      //   name: named_entities.Name, // Extract and set the name
+      //   document_type: [document_type], // Start with an array for document_type
+      //   named_entities,
+      // });
 
-      await newDocument.save();
+      // await newDocument.save();
+      const newDocument = {name: named_entities.Name, document_type: [document_type],named_entities: named_entities};
+      // console.log(newDocument);
+      await Document.create(newDocument);
+      console.log("done");
       return res.status(201).json({ message: "Document created successfully" });
     }
   } catch (error) {
@@ -110,7 +116,7 @@ app.get("/getLinks", async (req, res) => {
   try {
     if (!name) return res.status(400).json({ error: "Name is required" });
 
-    let docs = await Document.findOne({ name: name }, {document_type: 1});
+    let docs = await Document.findOne({ name: name }, { document_type: 1 });
     docs = docs.document_type;
 
     if (!docs || docs.length === 0) {
@@ -122,29 +128,40 @@ app.get("/getLinks", async (req, res) => {
     // Use for...of loop to handle async/await properly
     for (const doc of docs) {
       switch (doc) {
-        case 'aadhaar':
-          let aadhaarLink = await Aadhar.find();
-          console.log(aadhaarLink, name);
+        case "Aadhaar Card":
+          let aadhaarLink = await Aadhar.findOne(
+            { name: name },
+            { fileLink: 1 }
+          );
           if (aadhaarLink) {
-            response.push({ document: 'Aadhar', link : aadhaarLink.fileLink });
+            response.push({ document: "Aadhar", link: aadhaarLink.fileLink });
           }
           break;
-        case 'PAN Card':
+        case "PAN Card":
           let panLink = await Pan.findOne({ name: name }, { fileLink: 1 });
           if (panLink) {
-            response.push({ document: 'PAN Card', link : panLink.fileLink });
+            response.push({ document: "PAN Card", link: panLink.fileLink });
           }
           break;
-        case 'cheque':
-          let chequeLink = await Cheque.findOne({ name: name }, { fileLink: 1 });
+        case "Cheque":
+          let chequeLink = await Cheque.findOne(
+            { name: name },
+            { fileLink: 1 }
+          );
           if (chequeLink) {
-            response.push({ document: 'Cheque', link: chequeLink.fileLink });
+            response.push({ document: "Cheque", link: chequeLink.fileLink });
           }
           break;
-        case 'credit card':
-          let creditCardLink = await CreditCard.findOne({ name: name }, { fileLink: 1 });
+        case "Credit Card":
+          let creditCardLink = await CreditCard.findOne(
+            { name: name },
+            { fileLink: 1 }
+          );
           if (creditCardLink) {
-            response.push({ document: 'Credit Card', link : creditCardLink.fileLink });
+            response.push({
+              document: "Credit Card",
+              link: creditCardLink.fileLink,
+            });
           }
           break;
         default:
