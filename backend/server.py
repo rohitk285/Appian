@@ -212,33 +212,39 @@ def upload_details():
         print("File Drive Links:", file_drive_links)
 
         # Select a random document from data_array
-        selected_data = random.choice(data_array)
+        # selected_data = random.choice(data_array)
+        selected_data = data_array[6]
         document_type = selected_data["document_type"]
         named_entities = selected_data["named_entities"]
 
         client = MongoClient(MONGO_URI)  # Replace with your MongoDB URI
         db = client['test']  # Replace with your database name
 
+        # Check if document exists and either insert or update
         if document_type == "aadhaar" and "name" in named_entities:
-            db.Aadhar.insert_one({
-                "name": named_entities["name"],
-                "fileLink": file_drive_links.get("file_0", "")
-            })
+            db.aadhars.update_one(
+                {"name": named_entities["name"]},  # Search for existing name
+                {"$set": {"fileLink": file_drive_links.get("file_0", "")}},  # Update fileLink
+                upsert=True  # If not found, insert new document
+            )
         elif document_type == "pan" and "name" in named_entities:
-            db.Pan.insert_one({
-                "name": named_entities["name"],
-                "fileLink": file_drive_links.get("file_0", "")
-            })
+            db.pans.update_one(
+                {"name": named_entities["name"]},
+                {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
+                upsert=True
+            )
         elif document_type == "credit card" and "name" in named_entities:
-            db.CreditCard.insert_one({
-                "name": named_entities["name"],
-                "fileLink": file_drive_links.get("file_0", "")
-            })
+            db.creditcards.update_one(
+                {"name": named_entities["name"]},
+                {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
+                upsert=True
+            )
         elif document_type == "cheque" and "name" in named_entities:
-            db.Cheque.insert_one({
-                "name": named_entities["name"],
-                "fileLink": file_drive_links.get("file_0", "")
-            })
+            db.cheques.update_one(
+                {"name": named_entities["name"]},
+                {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
+                upsert=True
+            )
 
         # Proceed with sending data to the Express server
         express_url = "http://localhost:3000/pushDetails"

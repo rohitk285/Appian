@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const Document = require("./models/documentModel");
+const Aadhar = require('./models/aadharModel');
+const Pan = require('./models/panModel');
+const CreditCard = require('./models/creditCardModel');
+const Cheque = require('./models/chequeModel');
 require("dotenv").config();
 
 const app = express();
@@ -89,14 +93,71 @@ app.get("/getUserDetails", async (req, res) => {
       name: { $regex: name, $options: "i" },
     });
 
-    if (userDocument.length === 0)
-      return res.status(404).json({ error: "User not found" });
-
     // Return user details
     return res.status(200).json({
       message: "User details fetched successfully",
       data: userDocument,
     });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ error: "Failed to fetch user details" });
+  }
+});
+
+app.get("/getLinks", async (req, res) => {
+  const { name } = req.query;
+
+  try {
+    if (!name) return res.status(400).json({ error: "Name is required" });
+
+    let docs = await Document.findOne({ name: name }, {document_type: 1});
+    docs = docs.document_type;
+
+    if (!docs || docs.length === 0) {
+      return res.status(500).send("No documents found");
+    }
+
+    let response = [];
+
+    // Use for...of loop to handle async/await properly
+    for (const doc of docs) {
+      switch (doc) {
+        case 'aadhaar':
+          let aadhaarLink = await Aadhar.find();
+          console.log(aadhaarLink, name);
+          if (aadhaarLink) {
+            response.push({ document: 'Aadhar', link : aadhaarLink.fileLink });
+          }
+          break;
+        case 'pan':
+          let panLink = await Pan.findOne({ name: name }, { fileLink: 1 });
+          if (panLink) {
+            response.push({ document: 'Pan', link : panLink.fileLink });
+          }
+          break;
+        case 'cheque':
+          let chequeLink = await Cheque.findOne({ name: name }, { fileLink: 1 });
+          if (chequeLink) {
+            response.push({ document: 'Cheque', link: chequeLink.fileLink });
+          }
+          break;
+        case 'credit card':
+          let creditCardLink = await CreditCard.findOne({ name: name }, { fileLink: 1 });
+          if (creditCardLink) {
+            response.push({ document: 'Credit Card', link : creditCardLink.fileLink });
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // If no documents are found
+    if (response.length === 0) {
+      return res.status(404).json({ message: "No document links found" });
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching user details:", error);
     res.status(500).json({ error: "Failed to fetch user details" });

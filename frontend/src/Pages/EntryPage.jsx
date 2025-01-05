@@ -8,11 +8,13 @@ import {
   CardContent,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
-import axios from "axios"; // Make sure axios is installed
+import axios from "axios";
+import { useNavigate } from "react-router-dom"; // Import useNavigate instead of useHistory
 
 const EntryPage = () => {
   const [formData, setFormData] = useState({ name: "", dob: "" });
   const [filteredResults, setFilteredResults] = useState([]);
+  const navigate = useNavigate(); // Use useNavigate for navigation
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -23,13 +25,18 @@ const EntryPage = () => {
       const response = await axios.get("http://localhost:3000/getUserDetails", {
         params: { name: newFormData.name },
       });
-      console.log(response.data);
+      
       if (response.status === 200) {
         setFilteredResults(response.data.data); // Update filtered results with the user data
       }
     } catch (error) {
       setFilteredResults([]); // Clear results if no match
     }
+  };
+
+  const handleUserClick = (user) => {
+    // Navigate to the details page and pass the selected user data
+    navigate("/user-details", { state: { userData: user } });
   };
 
   return (
@@ -45,7 +52,6 @@ const EntryPage = () => {
           marginTop: "64px",
         }}
       >
-        {/* Left Input Section */}
         <Box
           sx={{
             flex: 1,
@@ -81,7 +87,6 @@ const EntryPage = () => {
           </Grid>
         </Box>
 
-        {/* Right Results Section */}
         <Box
           sx={{
             flex: 2,
@@ -115,8 +120,9 @@ const EntryPage = () => {
                     color: "#000000",
                     transition: "background-color 0.3s, color 0.3s",
                   },
-                  cursor: 'pointer'
+                  cursor: "pointer",
                 }}
+                onClick={() => handleUserClick(user)}
               >
                 <CardContent>
                   <Typography

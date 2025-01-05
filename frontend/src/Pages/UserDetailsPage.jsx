@@ -1,92 +1,180 @@
-import React from "react";
-import { Box, Paper, Typography, Divider } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Link,
+} from "@mui/material";
+import { useLocation } from "react-router-dom"; // To retrieve data passed through the router
+import axios from "axios";
 
 const UserDetailsPage = () => {
-  const location = useLocation();
-  const { userDetails } = location.state; // Get the user details passed from the EntryPage
+  const location = useLocation(); // Get the state passed from EntryPage
+  const user = location.state?.userData; // Retrieve user data
+  const [links, setLinks] = useState([]);
+
+  async function getLinks(){
+    try{
+        const response = await axios.get("http://localhost:3000/getLinks", {
+            params: { name: user.name },
+        });
+        setLinks(response.data);
+    } catch(err){
+        console.error("Cannot fetch links", err);
+    }
+  }
+  useEffect(() => {
+    getLinks();
+  },[])
+
+  if (!user) {
+    return (
+      <Typography variant="h5" sx={{ color: "#FF5722", padding: 2 }}>
+        User not found
+      </Typography>
+    );
+  }
+
+  // Format Date of Birth to a more readable format
+  const formatDOB = (dob) => {
+    const date = new Date(dob);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "#f9f9f9",
-        padding: 2,
-      }}
-    >
-      <Paper
-        elevation={3}
+    <Box sx={{ padding: 4, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: "bold", marginBottom: 4, color: "#111810", fontFamily: "Kanit" }}
+      >
+        User Details
+      </Typography>
+      <Card
         sx={{
-          width: { xs: "90%", sm: "800px" },
           padding: 4,
-          borderRadius: 4,
-          display: "flex",
-          flexDirection: "column",
-          gap: 3,
+          backgroundColor: "#FFFFFF",
+          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+          borderRadius: "8px",
         }}
       >
-        <Typography
-          variant="h5"
-          component="h1"
-          align="center"
-          gutterBottom
-          sx={{ fontWeight: "bold", marginBottom: 3 }}
-        >
-          User Details
-        </Typography>
-
-        <Box>
-          <Typography variant="body1" gutterBottom>
-            <strong>Name:</strong> {userDetails.name}
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            <strong>Date of Birth:</strong> {userDetails.dob}
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            <strong>Aadhar Number:</strong> {userDetails.aadharNumber}
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            <strong>PAN Number:</strong> {userDetails.panNumber}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="h6" sx={{ marginBottom: 1 }}>
-          Documents Uploaded:
-        </Typography>
-
-        {userDetails.documents && userDetails.documents.length > 0 ? (
-          userDetails.documents.map((docLink, index) => (
-            <Box key={index} sx={{ marginBottom: 3 }}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  overflow: "hidden",
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  padding: 1,
-                  backgroundColor: "#f1f1f1",
-                }}
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", color: "#FF5722" }}
               >
-                <iframe
-                  src={docLink}
-                  width="100%"
-                  height="700px"
-                  title={`Document ${index + 1}`}
-                />
-              </Paper>
-            </Box>
-          ))
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            No documents uploaded.
-          </Typography>
-        )}
-      </Paper>
+                Date of Birth:
+              </Typography>
+              <Typography variant="body1">{formatDOB(user.dob)}</Typography>
+            </Grid>
+
+            {/* Document Type with clickable links */}
+            {user.document_type && (
+              <Grid item xs={12}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#FF5722" }}
+                >
+                  Related Documents:
+                </Typography>
+                <List
+                  sx={{
+                    backgroundColor: "#eeeeee",
+                    padding: "10px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {links.map((doc, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={doc.document}
+                        secondary={
+                          doc.link ? (
+                            <Link
+                              href={doc.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{
+                                color: "#FF5722",
+                                fontWeight: "bold",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              Click here to view
+                            </Link>
+                          ) : (
+                            "No document available"
+                          )
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
+            )}
+
+            {/* Named Entities */}
+            {user.named_entities && (
+              <>
+                {Object.keys(user.named_entities).map((entityKey, index) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    key={entityKey}
+                    sx={{
+                      display: "flex",
+                      flexDirection: index % 2 === 0 ? "row" : "row-reverse",
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: "bold",
+                          color: "#FF5722",
+                          marginBottom: 1,
+                        }}
+                      >
+                        {entityKey}:
+                      </Typography>
+                      {Array.isArray(user.named_entities[entityKey]) ? (
+                        <List
+                          sx={{
+                            backgroundColor: "#eeeeee",
+                            padding: "10px",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          {user.named_entities[entityKey].map((item, index) => (
+                            <ListItem key={index}>
+                              <ListItemText primary={item} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      ) : (
+                        <Typography variant="body1">
+                          {user.named_entities[entityKey]}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Grid>
+                ))}
+              </>
+            )}
+          </Grid>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
