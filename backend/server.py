@@ -20,7 +20,7 @@ data_array = [
   {
     "document_type": "aadhaar",
     "named_entities": {
-      "name": "Rahul Rajendra prasad Mishra",
+      "Name": "Rahul Rajendra prasad Mishra",
       "dob": "25/05/1985",
       "gender": "Male",
       "aadhaar_number": "2932 1448 0395",
@@ -31,7 +31,7 @@ data_array = [
   {
     "document_type": "cheque",
     "named_entities": {
-      "name": "Jane Doe",
+      "Name": "Jane Doe",
       "address": "123 Great Linclon Road Miami MA 11223",
       "cheque_number": "A1234",
       "date": "26/06/2024",
@@ -42,9 +42,9 @@ data_array = [
     }
   },
   {
-    "document_type": "pan",
+    "document_type": "PAN Card",
     "named_entities": {
-      "name": "Amardeep Singh",
+      "Name": "Amardeep Singh",
       "father_name": "Surjit Singh",
       "dob": "09/11/1995",
       "pan_number": "LIWPS9203C"
@@ -53,7 +53,7 @@ data_array = [
   {
     "document_type": "credit card",
     "named_entities": {
-      "name": "CF Frost",
+      "Name": "CF Frost",
       "card_number": "3159 876543 21001",
       "expiry_date": "10/28",
       "issuer": "American Express"
@@ -62,7 +62,7 @@ data_array = [
   {
     "document_type": "aadhaar",
     "named_entities": {
-      "name": "Aarav Kapoor",
+      "Name": "Aarav Kapoor",
       "dob": "14/02/1990",
       "gender": "Male",
       "aadhaar_number": "7894 5623 1478",
@@ -73,7 +73,7 @@ data_array = [
   {
     "document_type": "cheque",
     "named_entities": {
-      "name": "Neha Sharma",
+      "Name": "Neha Sharma",
       "address": "45 Elite Avenue Pune MH 411045",
       "cheque_number": "B5678",
       "date": "30/09/2023",
@@ -84,9 +84,9 @@ data_array = [
     }
   },
   {
-    "document_type": "pan",
+    "document_type": "PAN Card",
     "named_entities": {
-      "name": "Jane Doe",
+      "Name": "Jane Doe",
       "father_name": "Michael Doe",
       "dob": "12/08/1982",
       "pan_number": "HGXPS3452K"
@@ -95,7 +95,7 @@ data_array = [
   {
     "document_type": "credit card",
     "named_entities": {
-      "name": "Neha Sharma",
+      "Name": "Neha Sharma",
       "card_number": "5678 4321 2109 8765",
       "expiry_date": "07/25",
       "issuer": "MasterCard"
@@ -104,7 +104,7 @@ data_array = [
   {
     "document_type": "cheque",
     "named_entities": {
-      "name": "Michael Doe",
+      "Name": "Michael Doe",
       "address": "1234 Main St, New York, NY, 10001",
       "cheque_number": "C9012",
       "date": "01/12/2023",
@@ -117,7 +117,7 @@ data_array = [
   {
     "document_type": "aadhaar",
     "named_entities": {
-      "name": "CF Frost",
+      "Name": "CF Frost",
       "dob": "1980",
       "gender": "Male",
       "aadhaar_number": "6543 3210 9087",
@@ -212,8 +212,8 @@ def upload_details():
         print("File Drive Links:", file_drive_links)
 
         # Select a random document from data_array
-        selected_data = random.choice(data_array)
-        # selected_data = data_array[6]
+        # selected_data = random.choice(data_array)
+        selected_data = data_array[2]
         document_type = selected_data["document_type"]
         named_entities = selected_data["named_entities"]
 
@@ -221,27 +221,27 @@ def upload_details():
         db = client['test']  # Replace with your database name
 
         # Check if document exists and either insert or update
-        if document_type == "aadhaar" and "name" in named_entities:
+        if document_type == "aadhaar" and "Name" in named_entities:
             db.aadhars.update_one(
-                {"name": named_entities["name"]},  # Search for existing name
+                {"name": named_entities["Name"]},  # Search for existing name
                 {"$set": {"fileLink": file_drive_links.get("file_0", "")}},  # Update fileLink
                 upsert=True  # If not found, insert new document
             )
-        elif document_type == "pan" and "name" in named_entities:
+        elif document_type == "PAN Card" and "Name" in named_entities:
             db.pans.update_one(
-                {"name": named_entities["name"]},
+                {"name": named_entities["Name"]},
                 {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
                 upsert=True
             )
-        elif document_type == "credit card" and "name" in named_entities:
+        elif document_type == "credit card" and "Name" in named_entities:
             db.creditcards.update_one(
-                {"name": named_entities["name"]},
+                {"name": named_entities["Name"]},
                 {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
                 upsert=True
             )
-        elif document_type == "cheque" and "name" in named_entities:
+        elif document_type == "cheque" and "Name" in named_entities:
             db.cheques.update_one(
-                {"name": named_entities["name"]},
+                {"name": named_entities["Name"]},
                 {"$set": {"fileLink": file_drive_links.get("file_0", "")}},
                 upsert=True
             )

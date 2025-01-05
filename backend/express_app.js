@@ -32,15 +32,15 @@ app.post("/pushDetails", async (req, res) => {
     const documentData = req.body;
     const { document_type, named_entities } = documentData;
 
-    if (!named_entities.name) {
+    if (!named_entities.Name) {
       return res.status(400).json({ error: "Named entity 'name' is required" });
     }
 
     // Find document by name
     let existingDocument = await Document.findOne({
-      name: named_entities.name,
+      name: named_entities.Name,
     });
-    console.log(existingDocument);
+    // console.log(existingDocument);
     if (existingDocument) {
       // Update the existing document
       if (!existingDocument.document_type.includes(document_type)) {
@@ -53,7 +53,7 @@ app.post("/pushDetails", async (req, res) => {
         existingDocument.named_entities[key] = value; // Overwrite or add field
       }
 
-      console.log(existingDocument.named_entities);
+      // console.log(existingDocument.named_entities);
       // Save the updated document
       await Document.updateOne(
         { name: existingDocument.name },
@@ -68,7 +68,7 @@ app.post("/pushDetails", async (req, res) => {
     } else {
       // Create a new document if not found
       const newDocument = new Document({
-        name: named_entities.name, // Extract and set the name
+        name: named_entities.Name, // Extract and set the name
         document_type: [document_type], // Start with an array for document_type
         named_entities,
       });
@@ -129,10 +129,10 @@ app.get("/getLinks", async (req, res) => {
             response.push({ document: 'Aadhar', link : aadhaarLink.fileLink });
           }
           break;
-        case 'pan':
+        case 'PAN Card':
           let panLink = await Pan.findOne({ name: name }, { fileLink: 1 });
           if (panLink) {
-            response.push({ document: 'Pan', link : panLink.fileLink });
+            response.push({ document: 'PAN Card', link : panLink.fileLink });
           }
           break;
         case 'cheque':
