@@ -212,8 +212,8 @@ def upload_details():
         print("File Drive Links:", file_drive_links)
 
         # Select a random document from data_array
-        # selected_data = random.choice(data_array)
-        selected_data = data_array[6]
+        selected_data = random.choice(data_array)
+        # selected_data = data_array[6]
         document_type = selected_data["document_type"]
         named_entities = selected_data["named_entities"]
 
