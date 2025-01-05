@@ -217,12 +217,12 @@ const UploadPage = () => {
               <Grid
                 item
                 xs={12}
-                sx={{ display: "flex", justifyContent: "center", mt: 2 }}
-              >
-                <CircularProgress sx={{ color: "#FFFFFF" }} />
-                <Typography variant="body1" sx={{ ml: 2, color: "#FFFFFF" }}>
-                  Uploading, please wait...
-                </Typography>
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 2,
+                }}
+              >               
               </Grid>
             )}
           </Grid>
@@ -247,6 +247,34 @@ const UploadPage = () => {
           />
         </Box>
       </Box>
+
+      {/* Dark Overlay for Loading */}
+      {loading && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.7)", // Semi-transparent dark background
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999, // Ensure it's above other content
+          }}
+        >
+          <Box sx={{ textAlign: "center", color: "#FFFFFF" }}>
+            <CircularProgress sx={{ color: "#FFFFFF" }} />
+            <Typography
+              variant="h6"
+              sx={{ marginTop: 2, color: "#FFFFFF" }}
+            >
+              Please wait, this might take a few moments.
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
       {/* Section with white background */}
       <Box
@@ -294,7 +322,7 @@ const UploadPage = () => {
                 {item.text}
               </Typography>
             </Box>
-          ))} 
+          ))}
         </Slider>
       </Box>
     </>
