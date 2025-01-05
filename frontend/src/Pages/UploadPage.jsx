@@ -294,7 +294,7 @@ const UploadPage = () => {
                 {item.text}
               </Typography>
             </Box>
-          ))}
+          ))} 
         </Slider>
       </Box>
     </>

@@ -2,13 +2,18 @@ from flask import Flask, jsonify, request
 import random
 import requests
 import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
 from flask_cors import CORS
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+import io
+from googleapiclient.http import MediaIoBaseUpload
 
 app = Flask(__name__)
 CORS(app)
+load_dotenv()
 
 # Sample data array
 data_array = [
@@ -124,7 +129,8 @@ data_array = [
 
 # Google Drive API setup
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-SERVICE_ACCOUNT_FILE = 'keys/appian-445718-e0ab73bfc265.json' # Replace with your service account key file path
+SERVICE_ACCOUNT_FILE = os.getenv('SERVICE_ACCOUNT_FILE')
+MONGO_URI = os.getenv("MONGO_URI")
 # print("SERVICE_ACCOUNT_FILE:", os.getenv('SERVICE_ACCOUNT_FILE'))
 
 # Authenticate using the service account
@@ -148,22 +154,93 @@ def upload_to_drive(file_path, file_name):
 def test():
     return jsonify({"message": "Flask server is running"}), 200
 
+from googleapiclient.errors import HttpError
+
 @app.route('/uploadDetails', methods=['POST'])
 def upload_details():
     try:
+        # Handle file uploads
         files = request.files
         uploaded_files = []
-        for file_key, file in files.items():
-            file_path = f"temp/{file.filename}"
-            file.save(file_path)
-            # Upload to Google Drive
-            drive_file_id = upload_to_drive(file_path, file.filename)
-            if drive_file_id:
-                uploaded_files.append({"file_name": file.filename, "drive_file_id": drive_file_id})
-                os.remove(file_path)  # Remove the local file after uploading
+        file_drive_links = {}
 
-        # After uploading to Google Drive, proceed with the existing logic
+        # Map dynamic keys to expected document types
+        document_type_mapping = {
+            "aadhaar": "aadhaar",
+            "pan": "pan",
+            "credit_card": "credit_card",
+            "cheque": "cheque"
+        }
+
+        for file_key, file in files.items():
+            # Use the file content in memory
+            file_metadata = {'name': file.filename}
+            file_stream = io.BytesIO(file.read())
+            media = MediaIoBaseUpload(file_stream, mimetype=file.mimetype, resumable=True)
+
+            # Upload to Google Drive
+            file_response = drive_service.files().create(
+                body=file_metadata, media_body=media, fields='id').execute()
+
+            if file_response:
+                drive_file_id = file_response.get('id')
+
+                # Update file permissions to make it publicly viewable
+                try:
+                    drive_service.permissions().create(
+                        fileId=drive_file_id,
+                        body={
+                            "type": "anyone",  # Allow anyone with the link
+                            "role": "reader"  # Grant view-only access
+                        }
+                    ).execute()
+                except HttpError as e:
+                    print(f"Error setting file permissions: {e}")
+
+                drive_file_link = f"https://drive.google.com/file/d/{drive_file_id}/view"
+
+                # Map uploaded file to its document type
+                document_type = document_type_mapping.get(file_key, file_key)
+                file_drive_links[document_type] = drive_file_link
+
+                uploaded_files.append({
+                    "file_name": file.filename,
+                    "drive_file_id": drive_file_id,
+                    "drive_file_link": drive_file_link
+                })
+
+        print("File Drive Links:", file_drive_links)
+
+        # Select a random document from data_array
         selected_data = random.choice(data_array)
+        document_type = selected_data["document_type"]
+        named_entities = selected_data["named_entities"]
+
+        client = MongoClient(MONGO_URI)  # Replace with your MongoDB URI
+        db = client['test']  # Replace with your database name
+
+        if document_type == "aadhaar" and "name" in named_entities:
+            db.Aadhar.insert_one({
+                "name": named_entities["name"],
+                "fileLink": file_drive_links.get("file_0", "")
+            })
+        elif document_type == "pan" and "name" in named_entities:
+            db.Pan.insert_one({
+                "name": named_entities["name"],
+                "fileLink": file_drive_links.get("file_0", "")
+            })
+        elif document_type == "credit card" and "name" in named_entities:
+            db.CreditCard.insert_one({
+                "name": named_entities["name"],
+                "fileLink": file_drive_links.get("file_0", "")
+            })
+        elif document_type == "cheque" and "name" in named_entities:
+            db.Cheque.insert_one({
+                "name": named_entities["name"],
+                "fileLink": file_drive_links.get("file_0", "")
+            })
+
+        # Proceed with sending data to the Express server
         express_url = "http://localhost:3000/pushDetails"
         response = requests.post(express_url, json=selected_data)
 
