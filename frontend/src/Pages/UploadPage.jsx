@@ -160,15 +160,17 @@ const UploadPage = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sx={{ display: "flex", alignItems: "center" }}>
               <Button
-                fullWidth
                 variant="outlined"
                 component="label"
                 startIcon={<CloudUpload />}
                 sx={{
                   color: "#FFFFFF",
                   borderColor: "#FFFFFF",
+                  flexShrink: 0, // Prevent the button from stretching
+                  minWidth: "150px", // Set a fixed minimum width for the button
+                  marginRight: "10px", // Add spacing between button and file name display
                 }}
               >
                 Upload Files (PDFs)
@@ -185,17 +187,19 @@ const UploadPage = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ mt: 1, color: "#FFFFFF" }}
+                  sx={{
+                    color: "#FFFFFF",
+                    whiteSpace: "nowrap", // Prevent text wrapping
+                    overflow: "hidden", // Hide overflowing text
+                    textOverflow: "ellipsis", // Add ellipsis for truncated text
+                    maxWidth: "calc(100% - 170px)", // Adjust width dynamically
+                  }}
                 >
-                  Selected Files:
-                  <ul>
-                    {formData.files.map((file, index) => (
-                      <li key={index}>{file.name}</li>
-                    ))}
-                  </ul>
+                  {formData.files.map((file) => file.name).join(", ")}
                 </Typography>
               )}
             </Grid>
+
             <Grid item xs={12}>
               <Button
                 fullWidth
@@ -222,8 +226,7 @@ const UploadPage = () => {
                   justifyContent: "center",
                   mt: 2,
                 }}
-              >               
-              </Grid>
+              ></Grid>
             )}
           </Grid>
         </Box>
@@ -266,10 +269,7 @@ const UploadPage = () => {
         >
           <Box sx={{ textAlign: "center", color: "#FFFFFF" }}>
             <CircularProgress sx={{ color: "#FFFFFF" }} />
-            <Typography
-              variant="h6"
-              sx={{ marginTop: 2, color: "#FFFFFF" }}
-            >
+            <Typography variant="h6" sx={{ marginTop: 2, color: "#FFFFFF" }}>
               Please wait, this might take a few moments.
             </Typography>
           </Box>

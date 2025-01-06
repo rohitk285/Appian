@@ -36,7 +36,7 @@ const Navbar = () => {
             color: "#FF5722", // Orange color for Appian text
             fontFamily: "Bebas Neue",
           }}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/uploadDocs")}
         >
           Appian
         </Typography>
@@ -45,17 +45,22 @@ const Navbar = () => {
         <Box>
           {/* Retrieve Button with Dropdown */}
           <Button
-            onClick={handleMenuOpen}
+            onMouseEnter={handleMenuOpen}
             sx={{
-              color: "#FFFFFF", // White text for button
-              backgroundColor: "#FF5722", // Orange bubble background
+              color: "#000000", // Black text
               fontWeight: "bold",
+              fontSize: "18px", // Increased font size
               textTransform: "none",
+              fontFamily: "Nunito",
               marginRight: 2, // Spacing between buttons
               padding: "8px 20px", // Bubble-like padding
               borderRadius: "10px", // Rounded bubble style
               ":hover": {
-                backgroundColor: "#E64A19", // Darker orange on hover
+                color: "#FF5722", // Change text color to orange on hover
+                textDecoration: "underline", // Underline text on hover
+                textDecorationThickness: "4px", // Thicker underline
+                textUnderlineOffset: "5px", // Offset underline closer to bottom edge
+                textDecorationColor: "#FF5722", // Orange underline
               },
             }}
           >
@@ -67,19 +72,45 @@ const Navbar = () => {
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
+            onMouseLeave={handleMenuClose}
             MenuListProps={{
               "aria-labelledby": "basic-button",
             }}
+            sx={{
+              "& .MuiPaper-root": {
+                backgroundColor: "#FFFFFF", // White background for dropdown
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // Subtle shadow
+              },
+            }}
           >
-            <MenuItem onClick={() => { handleMenuClose(); navigate("/retrievedate"); }}>
-              By Upload Date
-            </MenuItem>
-            <MenuItem onClick={() => { handleMenuClose(); navigate("/"); }}>
-              By Customer Name
-            </MenuItem>
-            <MenuItem onClick={() => { handleMenuClose(); navigate("/retrievedoc"); }}>
-              By Document Type
-            </MenuItem>
+            {["By Upload Date", "By Customer Name", "By Document Type"].map((text, index) => (
+              <MenuItem
+                key={index}
+                onClick={() => {
+                  handleMenuClose();
+                  navigate(
+                    text === "By Upload Date"
+                      ? "/retrievedate"
+                      : text === "By Customer Name"
+                      ? "/"
+                      : "/retrievedoc"
+                  );
+                }}
+                sx={{
+                  color: "#000000", // Black text
+                  fontSize: "1rem", // Increased font size
+                  ":hover": {
+                    color: "#FF5722", // Orange text on hover
+                    textDecoration: "underline", // Underline text on hover
+                    textDecorationThickness: "3px", // Thicker underline
+                    textUnderlineOffset: "5px", // Offset underline closer to bottom edge
+                    textDecorationColor: "#FF5722", // Orange underline
+                  },
+                }}
+              >
+                {text}
+              </MenuItem>
+            ))}
           </Menu>
 
           {/* Other Buttons */}
@@ -88,15 +119,20 @@ const Navbar = () => {
               key={index}
               onClick={() => navigate(index === 0 ? "/uploadDocs" : "#")}
               sx={{
-                color: "#FFFFFF", // White text for buttons
-                backgroundColor: "#FF5722", // Orange bubble background
+                color: "#000000", // Black text
                 fontWeight: "bold",
+                fontSize: "18px", // Increased font size
+                fontFamily: "Nunito",
                 textTransform: "none",
                 marginRight: 2, // Spacing between buttons
                 padding: "8px 20px", // Bubble-like padding
                 borderRadius: "10px", // Rounded bubble style
                 ":hover": {
-                  backgroundColor: "#E64A19", // Darker orange on hover
+                  color: "#FF5722", // Change text color to orange on hover
+                  textDecoration: "underline", // Underline text on hover
+                  textDecorationThickness: "5px", // Thicker underline
+                  textUnderlineOffset: "20px", // Offset underline closer to bottom edge
+                  textDecorationColor: "#FF5722", // Orange underline
                 },
               }}
             >

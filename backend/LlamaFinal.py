@@ -266,19 +266,28 @@ def process_pdf_with_llama(file_stream, output_folder, json_output_path=None):
             parsed_response = convert_to_strict_json(response_content)
             normalized_response = normalize_json_response(parsed_response)
 
-            # Check if the response contains valid document types
+            # Check if the response contains valid document types and required fields
             for entry in normalized_response:
                 document_type = entry.get("document_type", "")
+                named_entities = entry.get("named_entities", {})
+
+                if document_type == "Aadhaar Card" and "Aadhaar Number" not in named_entities:
+                    print("Invalid Aadhaar Card: Missing Aadhaar Number")
+                    continue
+
+                if document_type == "PAN Card" and "Permanent Account Number" not in named_entities:
+                    print("Invalid PAN Card: Missing Permanent Account Number")
+                    continue
+
                 if document_type in valid_document_types:
                     valid_response = True
-                    all_responses.extend(normalized_response)
+                    all_responses.append(entry)
                     break  # Exit while loop if a valid response is found
 
     if json_output_path:
         save_json_output(all_responses, json_output_path)
 
     return all_responses
-
 
 # Example usage
 # pdf_path = "/home/george/MachineLearning/ML/1AadharPDF.pdf"  # Replace with your PDF file path

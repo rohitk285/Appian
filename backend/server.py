@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request
-import random
 import requests
 import os
 from pymongo import MongoClient
@@ -89,11 +88,28 @@ def upload_details():
         # Save the structured data into MongoDB
         client = MongoClient(MONGO_URI)
         db = client['test']  # Replace with your database name
-        
+
         document_type = selected_data.get("document_type", "")
         named_entities = selected_data.get("named_entities", {})
 
         if document_type == "Aadhaar Card" and "Name" in named_entities:
+            aadhaar_number = named_entities.get("Aadhaar Number", None)
+
+            # Check if Aadhaar Number is available
+            if not aadhaar_number:
+                return jsonify({"error": "Aadhaar Number not found in the document."}), 400
+
+            # Remove spaces from the Aadhaar number before sending to the validation server
+            aadhaar_number = aadhaar_number.replace(" ", "")
+
+            # Call the Express server to validate the Aadhaar number using Verhoeff algorithm
+            express_url = "http://localhost:3000/validateAadhaar"
+            response = requests.post(express_url, json={"aadhaar_number": aadhaar_number})
+
+            if response.status_code != 200:
+                return jsonify({"error": f"Aadhaar Number {aadhaar_number} is not valid."}), 400
+
+            # If valid, insert into the database
             db.aadhars.update_one(
                 {"name": named_entities["Name"]},
                 {"$set": {"fileLink": file_drive_links['file_0']}},

@@ -7,6 +7,7 @@ const Aadhar = require("./models/aadharModel");
 const Pan = require("./models/panModel");
 const CreditCard = require("./models/creditCardModel");
 const Cheque = require("./models/chequeModel");
+const verhoeff = require('verhoeff');
 require("dotenv").config();
 
 const app = express();
@@ -68,23 +69,29 @@ app.post("/pushDetails", async (req, res) => {
       );
       return res.status(200).json({ message: "Document updated successfully" });
     } else {
-      // Create a new document if not found
-      // const newDocument = new Document({
-      //   name: named_entities.Name, // Extract and set the name
-      //   document_type: [document_type], // Start with an array for document_type
-      //   named_entities,
-      // });
-
-      // await newDocument.save();
       const newDocument = {name: named_entities.Name, document_type: [document_type],named_entities: named_entities};
       // console.log(newDocument);
       await Document.create(newDocument);
-      console.log("done");
       return res.status(201).json({ message: "Document created successfully" });
     }
   } catch (error) {
     console.error("Error processing document data:", error);
     res.status(500).json({ error: "Failed to process document data" });
+  }
+});
+
+app.post('/validateAadhaar', (req, res) => {
+  const { aadhaar_number } = req.body;
+
+  // Remove spaces before validating
+  const cleanAadhaarNumber = aadhaar_number.replace(/\s+/g, '');
+  console.log(cleanAadhaarNumber);
+  console.log(verhoeff.validate(cleanAadhaarNumber));
+
+  if (cleanAadhaarNumber && cleanAadhaarNumber.length === 12 && verhoeff.validate(cleanAadhaarNumber)) {
+    return res.status(200).json({ message: "Aadhaar Number is valid." });
+  } else {
+    return res.status(400).json({ error: "Invalid Aadhaar Number." });
   }
 });
 

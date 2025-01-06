@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        roboto: ['Oswald', 'Merriweather', 'Kanit', 'Bebas Neue'], // Add Roboto font
+        roboto: ['Oswald', 'Merriweather', 'Mulish', 'Open Sans', 'Nunito','Kanit', 'Bebas Neue'], // Add Roboto font
       },
     },
   },

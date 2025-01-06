@@ -18,19 +18,20 @@ const UserDetailsPage = () => {
   const user = location.state?.userData; // Retrieve user data
   const [links, setLinks] = useState([]);
 
-  async function getLinks(){
-    try{
-        const response = await axios.get("http://localhost:3000/getLinks", {
-            params: { name: user.name },
-        });
-        setLinks(response.data);
-    } catch(err){
-        console.error("Cannot fetch links", err);
+  async function getLinks() {
+    try {
+      const response = await axios.get("http://localhost:3000/getLinks", {
+        params: { name: user.name },
+      });
+      setLinks(response.data);
+    } catch (err) {
+      console.error("Cannot fetch links", err);
     }
   }
+
   useEffect(() => {
     getLinks();
-  },[])
+  }, []);
 
   if (!user) {
     return (
@@ -40,21 +41,11 @@ const UserDetailsPage = () => {
     );
   }
 
-  // Format Date of Birth to a more readable format
-  const formatDOB = (dob) => {
-    const date = new Date(dob);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
   return (
     <Box sx={{ padding: 4, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography
         variant="h4"
-        sx={{ fontWeight: "bold", marginBottom: 4, color: "#111810", fontFamily: "Kanit" }}
+        sx={{ fontWeight: "bold", marginBottom: 4, color: "#111810", fontFamily: "Oswald" }}
       >
         User Details
       </Typography>
@@ -68,61 +59,6 @@ const UserDetailsPage = () => {
       >
         <CardContent>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "#FF5722" }}
-              >
-                Date of Birth:
-              </Typography>
-              <Typography variant="body1">{formatDOB(user.dob)}</Typography>
-            </Grid>
-
-            {/* Document Type with clickable links */}
-            {user.document_type && (
-              <Grid item xs={12}>
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: "bold", color: "#FF5722" }}
-                >
-                  Related Documents:
-                </Typography>
-                <List
-                  sx={{
-                    backgroundColor: "#eeeeee",
-                    padding: "10px",
-                    borderRadius: "8px",
-                  }}
-                >
-                  {links.map((doc, index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={doc.document}
-                        secondary={
-                          doc.link ? (
-                            <Link
-                              href={doc.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{
-                                color: "#FF5722",
-                                fontWeight: "bold",
-                                textDecoration: "underline",
-                              }}
-                            >
-                              Click here to view
-                            </Link>
-                          ) : (
-                            "No document available"
-                          )
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Grid>
-            )}
-
             {/* Named Entities */}
             {user.named_entities && (
               <>
@@ -158,12 +94,20 @@ const UserDetailsPage = () => {
                         >
                           {user.named_entities[entityKey].map((item, index) => (
                             <ListItem key={index}>
-                              <ListItemText primary={item} />
+                              <ListItemText
+                                primary={item}
+                                primaryTypographyProps={{
+                                  sx: { fontWeight: "bold", color: "#000000" },
+                                }}
+                              />
                             </ListItem>
                           ))}
                         </List>
                       ) : (
-                        <Typography variant="body1">
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "bold", color: "#000000", fontFamily: "Nunito", fontSize: "20px" }}
+                        >
                           {user.named_entities[entityKey]}
                         </Typography>
                       )}
@@ -171,6 +115,54 @@ const UserDetailsPage = () => {
                   </Grid>
                 ))}
               </>
+            )}
+
+            {/* Related Documents */}
+            {user.document_type && (
+              <Grid item xs={12}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#FF5722" }}
+                >
+                  Related Documents:
+                </Typography>
+                <List
+                  sx={{
+                    backgroundColor: "#eeeeee",
+                    padding: "10px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {links.map((doc, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={doc.document}
+                        primaryTypographyProps={{
+                          sx: { fontWeight: "bold", color: "#000000", fontFamily: "Merriweather" },
+                        }}
+                        secondary={
+                          doc.link ? (
+                            <Link
+                              href={doc.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{
+                                color: "#FF5722",
+                                fontWeight: "bold",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              Click here to view
+                            </Link>
+                          ) : (
+                            "No document available"
+                          )
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
             )}
           </Grid>
         </CardContent>
