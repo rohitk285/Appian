@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from "react"; 
 import {
   Box,
   Button,
@@ -6,18 +6,20 @@ import {
   TextField,
   Typography,
   CircularProgress,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
-import { CloudUpload } from "@mui/icons-material";
-import Slider from "react-slick"; // Importing react-slick for the carousel
-import "slick-carousel/slick/slick.css"; // Slick CSS
-import "slick-carousel/slick/slick-theme.css"; // Slick Theme CSS
+import { CloudUpload, CheckCircle, Cancel } from "@mui/icons-material";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import Navbar from "../components/Navbar";
 import UploadImage from "../assets/icon1.png";
 import CustomerVerified from "../assets/icon2.jpg";
 import IndiaBanks from "../assets/icon4.png";
 import WorldBanks from "../assets/icon3.png";
-import AIPowered from "../assets/icon5.jpg"; // New image
-import ProcessIntelligence from "../assets/icon6.png"; // New image
+import AIPowered from "../assets/icon5.jpg";
+import ProcessIntelligence from "../assets/icon6.png";
 
 const UploadPage = () => {
   const [formData, setFormData] = useState({
@@ -26,6 +28,7 @@ const UploadPage = () => {
     files: [],
   });
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({ open: false, success: false, message: "" });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,7 +55,6 @@ const UploadPage = () => {
         formDataToSend.append(`file_${index}`, file);
       });
 
-      // Send files to backend
       const response = await fetch("http://localhost:5000/uploadDetails", {
         method: "POST",
         body: formDataToSend,
@@ -60,9 +62,17 @@ const UploadPage = () => {
 
       const result = await response.json();
       if (response.ok) {
-        alert(result.message);
+        setAlert({
+          open: true,
+          success: true,
+          message: "Successfully Processed",
+        });
       } else {
-        alert(result.error);
+        setAlert({
+          open: true,
+          success: false,
+          message: result.error || "An error occurred.",
+        });
       }
 
       setFormData({
@@ -72,19 +82,26 @@ const UploadPage = () => {
       });
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("An error occurred while submitting the form.");
+      setAlert({
+        open: true,
+        success: false,
+        message: "An error occurred while submitting the form.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Carousel settings for react-slick
+  const handleCloseAlert = () => {
+    setAlert({ open: false, success: false, message: "" });
+  };
+
   const carouselSettings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 4, // Show 4 images at a time
-    slidesToScroll: 1, // Scroll one image at a time
+    slidesToShow: 4,
+    slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
     pauseOnHover: true,
@@ -102,18 +119,16 @@ const UploadPage = () => {
   return (
     <>
       <Navbar />
-      {/* Section with black background */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           minHeight: "100vh",
-          backgroundColor: "#000000", // Black background
+          backgroundColor: "#000000",
           padding: 4,
         }}
       >
-        {/* Form Section */}
         <Box
           sx={{ width: { xs: "100%", sm: "40%" } }}
           className="-translate-y-24 translate-x-10"
@@ -168,9 +183,9 @@ const UploadPage = () => {
                 sx={{
                   color: "#FFFFFF",
                   borderColor: "#FFFFFF",
-                  flexShrink: 0, // Prevent the button from stretching
-                  minWidth: "150px", // Set a fixed minimum width for the button
-                  marginRight: "10px", // Add spacing between button and file name display
+                  flexShrink: 0,
+                  minWidth: "150px",
+                  marginRight: "10px",
                 }}
               >
                 Upload Files (PDFs)
@@ -189,17 +204,16 @@ const UploadPage = () => {
                   color="text.secondary"
                   sx={{
                     color: "#FFFFFF",
-                    whiteSpace: "nowrap", // Prevent text wrapping
-                    overflow: "hidden", // Hide overflowing text
-                    textOverflow: "ellipsis", // Add ellipsis for truncated text
-                    maxWidth: "calc(100% - 170px)", // Adjust width dynamically
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "calc(100% - 170px)",
                   }}
                 >
                   {formData.files.map((file) => file.name).join(", ")}
                 </Typography>
               )}
             </Grid>
-
             <Grid item xs={12}>
               <Button
                 fullWidth
@@ -217,21 +231,9 @@ const UploadPage = () => {
                 Upload
               </Button>
             </Grid>
-            {loading && (
-              <Grid
-                item
-                xs={12}
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  mt: 2,
-                }}
-              ></Grid>
-            )}
           </Grid>
         </Box>
 
-        {/* Image Section */}
         <Box
           sx={{
             display: { xs: "none", sm: "block" },
@@ -251,7 +253,6 @@ const UploadPage = () => {
         </Box>
       </Box>
 
-      {/* Dark Overlay for Loading */}
       {loading && (
         <Box
           sx={{
@@ -260,11 +261,11 @@ const UploadPage = () => {
             left: 0,
             width: "100%",
             height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.7)", // Semi-transparent dark background
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 9999, // Ensure it's above other content
+            zIndex: 9999,
           }}
         >
           <Box sx={{ textAlign: "center", color: "#FFFFFF" }}>
@@ -276,36 +277,62 @@ const UploadPage = () => {
         </Box>
       )}
 
-      {/* Section with white background */}
+      <Dialog
+        open={alert.open}
+        onClose={handleCloseAlert}
+        sx={{
+          "& .MuiDialog-paper": {
+            padding: 4,
+            borderRadius: "15px",
+            minWidth: "300px",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {alert.success ? (
+            <CheckCircle
+              sx={{ fontSize: "60px", color: "green", marginBottom: 2 }}
+            />
+          ) : (
+            <Cancel sx={{ fontSize: "60px", color: "red", marginBottom: 2 }} />
+          )}
+          <Typography variant="h6">{alert.message}</Typography>
+        </DialogContent>
+      </Dialog>
+
       <Box
         className="-translate-y-64"
         sx={{
           minHeight: "100vh",
-          backgroundColor: "#FFFFFF", // White background
+          backgroundColor: "#FFFFFF",
           padding: 4,
         }}
       >
-        <Slider
-          {...carouselSettings}
-          style={{ margin: "0 -15px" }} // Adjust margins for proper spacing
-        >
+        <Slider {...carouselSettings} style={{ margin: "0 -15px" }}>
           {carouselImages.map((item, index) => (
             <Box
               key={index}
               sx={{
                 position: "relative",
-                margin: "0 15px", // Add spacing between images
-                width: "70%", // Reduce the width of the images
-                height: "200px", // Reduce the height of the images
+                margin: "0 15px",
+                width: "70%",
+                height: "200px",
                 backgroundImage: `url(${item.src})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 borderRadius: "10px",
                 display: "flex",
-                alignItems: "center", // Center the content vertically
-                justifyContent: "center", // Center the content horizontally
+                alignItems: "center",
+                justifyContent: "center",
                 overflow: "hidden",
-                boxShadow: "0 4px 10px rgba(0, 0, 0, 0.5)", // Add a slight shadow for better visuals
+                boxShadow: "0 4px 10px rgba(0, 0, 0, 0.5)",
               }}
             >
               <Typography
@@ -313,10 +340,10 @@ const UploadPage = () => {
                 sx={{
                   color: "#FFFFFF",
                   fontWeight: "bold",
-                  backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
-                  padding: "10px 20px", // Add padding for the text strip
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  padding: "10px 20px",
                   borderRadius: "5px",
-                  textAlign: "center", // Center text alignment
+                  textAlign: "center",
                 }}
               >
                 {item.text}
