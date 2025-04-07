@@ -14,8 +14,8 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow only the frontend's domain
-    methods: ["GET", "POST"], // Allow specific methods
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
   })
 );
 
@@ -23,7 +23,7 @@ app.use(
 app.use(bodyParser.json());
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI; // Replace with your MongoDB URI
+const MONGO_URI = process.env.MONGO_URI;
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Connected to MongoDB"))
@@ -83,10 +83,10 @@ app.post("/pushDetails", async (req, res) => {
 app.post('/validateAadhaar', (req, res) => {
   const { aadhaar_number } = req.body;
 
-  // Remove spaces before validating
+  // remove spaces
   const cleanAadhaarNumber = aadhaar_number.replace(/\s+/g, '');
-  console.log(cleanAadhaarNumber);
-  console.log(verhoeff.validate(cleanAadhaarNumber));
+  // console.log(cleanAadhaarNumber);
+  // console.log(verhoeff.validate(cleanAadhaarNumber));
 
   if (cleanAadhaarNumber && cleanAadhaarNumber.length === 12 && verhoeff.validate(cleanAadhaarNumber)) {
     return res.status(200).json({ message: "Aadhaar Number is valid." });
@@ -97,16 +97,14 @@ app.post('/validateAadhaar', (req, res) => {
 
 app.get("/getUserDetails", async (req, res) => {
   try {
-    const { name } = req.query; // Get the 'name' query parameter
+    const { name } = req.query;
 
     if (!name) return res.status(400).json({ error: "Name is required" });
 
-    // Find document by name
     const userDocument = await Document.find({
       name: { $regex: name, $options: "i" },
     });
 
-    // Return user details
     return res.status(200).json({
       message: "User details fetched successfully",
       data: userDocument,
@@ -132,7 +130,6 @@ app.get("/getLinks", async (req, res) => {
 
     let response = [];
 
-    // Use for...of loop to handle async/await properly
     for (const doc of docs) {
       switch (doc) {
         case "Aadhaar Card":
@@ -176,7 +173,6 @@ app.get("/getLinks", async (req, res) => {
       }
     }
 
-    // If no documents are found
     if (response.length === 0) {
       return res.status(404).json({ message: "No document links found" });
     }

@@ -79,7 +79,7 @@ npm install
 npm run dev
 ```
 
-- Start the application frontend
+- Start the application backend
 ```bash
 cd backend
 python server.py
