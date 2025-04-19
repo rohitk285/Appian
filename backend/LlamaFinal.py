@@ -4,6 +4,8 @@ import base64
 import os
 from together import Together
 import tempfile
+from dotenv import load_dotenv
+load_dotenv()
 
 # Initialize Together client using the API key from the environment variable
 api_key = os.getenv("TOGETHER_API_KEY")

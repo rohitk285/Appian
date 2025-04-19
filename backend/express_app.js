@@ -19,10 +19,8 @@ app.use(
   })
 );
 
-// Middleware
 app.use(bodyParser.json());
 
-// MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI;
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -39,25 +37,21 @@ app.post("/pushDetails", async (req, res) => {
       return res.status(400).json({ error: "Named entity 'name' is required" });
     }
 
-    // Find document by name
     let existingDocument = await Document.findOne({
       name: named_entities.Name,
     });
     // console.log(existingDocument);
     if (existingDocument) {
-      // Update the existing document
       if (!existingDocument.document_type.includes(document_type)) {
-        // Append document type to the array if not already present
         existingDocument.document_type.push(document_type);
       }
 
-      // Merge or update named_entities fields
       for (const [key, value] of Object.entries(named_entities)) {
-        existingDocument.named_entities[key] = value; // Overwrite or add field
+        existingDocument.named_entities[key] = value;
       }
 
       // console.log(existingDocument.named_entities);
-      // Save the updated document
+
       await Document.updateOne(
         { name: existingDocument.name },
         {
