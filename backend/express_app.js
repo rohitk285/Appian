@@ -7,7 +7,8 @@ const Aadhar = require("./models/aadharModel");
 const Pan = require("./models/panModel");
 const CreditCard = require("./models/creditCardModel");
 const Cheque = require("./models/chequeModel");
-const verhoeff = require('verhoeff');
+const verhoeff = require("verhoeff");
+const { encryptAES, decryptAES, hashName } = require("./utils/encryptionUtils");
 require("dotenv").config();
 
 const app = express();
@@ -32,25 +33,23 @@ app.post("/pushDetails", async (req, res) => {
   try {
     const documentData = req.body;
     const { document_type, named_entities } = documentData;
-
+    
     if (!named_entities.Name) {
       return res.status(400).json({ error: "Named entity 'name' is required" });
     }
-
+    
     let existingDocument = await Document.findOne({
       name: named_entities.Name,
     });
-    // console.log(existingDocument);
+
     if (existingDocument) {
       if (!existingDocument.document_type.includes(document_type)) {
         existingDocument.document_type.push(document_type);
       }
 
       for (const [key, value] of Object.entries(named_entities)) {
-        existingDocument.named_entities[key] = value;
+        existingDocument.named_entities[key] = encryptAES(value);
       }
-
-      // console.log(existingDocument.named_entities);
 
       await Document.updateOne(
         { name: existingDocument.name },
@@ -63,8 +62,16 @@ app.post("/pushDetails", async (req, res) => {
       );
       return res.status(200).json({ message: "Document updated successfully" });
     } else {
-      const newDocument = {name: named_entities.Name, document_type: [document_type],named_entities: named_entities};
-      // console.log(newDocument);
+      let user_name = named_entities.Name;
+      for(const key in named_entities){
+        if(named_entities[key])
+            named_entities[key] = encryptAES(named_entities[key]);
+      }
+      const newDocument = {
+        name: user_name,
+        document_type: [document_type],
+        named_entities: named_entities,
+      };
       await Document.create(newDocument);
       return res.status(201).json({ message: "Document created successfully" });
     }
@@ -74,15 +81,17 @@ app.post("/pushDetails", async (req, res) => {
   }
 });
 
-app.post('/validateAadhaar', (req, res) => {
+app.post("/validateAadhaar", (req, res) => {
   const { aadhaar_number } = req.body;
 
   // remove spaces
-  const cleanAadhaarNumber = aadhaar_number.replace(/\s+/g, '');
-  // console.log(cleanAadhaarNumber);
-  // console.log(verhoeff.validate(cleanAadhaarNumber));
+  const cleanAadhaarNumber = aadhaar_number.replace(/\s+/g, "");
 
-  if (cleanAadhaarNumber && cleanAadhaarNumber.length === 12 && verhoeff.validate(cleanAadhaarNumber)) {
+  if (
+    cleanAadhaarNumber &&
+    cleanAadhaarNumber.length === 12 &&
+    verhoeff.validate(cleanAadhaarNumber)
+  ) {
     return res.status(200).json({ message: "Aadhaar Number is valid." });
   } else {
     return res.status(400).json({ error: "Invalid Aadhaar Number." });
@@ -95,13 +104,29 @@ app.get("/getUserDetails", async (req, res) => {
 
     if (!name) return res.status(400).json({ error: "Name is required" });
 
-    const userDocument = await Document.find({
+    const userDocuments = await Document.find({
       name: { $regex: name, $options: "i" },
+    });
+
+    // decrypting data in named_entities
+    const decryptedDocuments = userDocuments.map(doc => {
+      const decryptedNamedEntities = {};
+      for (const [key, value] of Object.entries(doc.named_entities)) {
+        try {
+          decryptedNamedEntities[key] = decryptAES(value);
+        } catch (e) {
+          decryptedNamedEntities[key] = null;
+        }
+      }
+      return {
+        ...doc.toObject(),
+        named_entities: decryptedNamedEntities,
+      };
     });
 
     return res.status(200).json({
       message: "User details fetched successfully",
-      data: userDocument,
+      data: decryptedDocuments,
     });
   } catch (error) {
     console.error("Error fetching user details:", error);
@@ -114,7 +139,7 @@ app.get("/getLinks", async (req, res) => {
 
   try {
     if (!name) return res.status(400).json({ error: "Name is required" });
-
+    const hashedName = hashName(name);
     let docs = await Document.findOne({ name: name }, { document_type: 1 });
     docs = docs.document_type;
 
@@ -128,7 +153,7 @@ app.get("/getLinks", async (req, res) => {
       switch (doc) {
         case "Aadhaar Card":
           let aadhaarLink = await Aadhar.findOne(
-            { name: name },
+            { nameHash: hashedName },
             { fileLink: 1 }
           );
           if (aadhaarLink) {
@@ -136,14 +161,14 @@ app.get("/getLinks", async (req, res) => {
           }
           break;
         case "PAN Card":
-          let panLink = await Pan.findOne({ name: name }, { fileLink: 1 });
+          let panLink = await Pan.findOne({ nameHash: hashedName }, { fileLink: 1 });
           if (panLink) {
             response.push({ document: "PAN Card", link: panLink.fileLink });
           }
           break;
         case "Cheque":
           let chequeLink = await Cheque.findOne(
-            { name: name },
+            { nameHash: hashedName },
             { fileLink: 1 }
           );
           if (chequeLink) {
@@ -152,7 +177,7 @@ app.get("/getLinks", async (req, res) => {
           break;
         case "Credit Card":
           let creditCardLink = await CreditCard.findOne(
-            { name: name },
+            { nameHash: hashedName },
             { fileLink: 1 }
           );
           if (creditCardLink) {

@@ -8,9 +8,32 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from io import BytesIO
-
-# Importing necessary functions from LlamaFinal.py
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import binascii
+# import pdf processing function from LlamaFinal.py
 from LlamaFinal import process_pdf_with_llama
+import hashlib
+
+def hash_name(name):
+    return hashlib.sha256(name.encode()).hexdigest()
+
+def encrypt_name_aes(plaintext_name):
+    key = bytes.fromhex(os.getenv("ENCRYPTION_KEY"))
+    iv = os.urandom(16)
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    # Pad the plaintext to be a multiple of 16 bytes
+    pad_len = 16 - (len(plaintext_name.encode()) % 16)
+    padded_name = plaintext_name.encode() + bytes([pad_len]) * pad_len
+
+    encrypted = encryptor.update(padded_name) + encryptor.finalize()
+
+    return {
+        "iv": iv.hex(),
+        "ciphertext": encrypted.hex()
+    }
 
 app = Flask(__name__)
 CORS(app)
@@ -111,26 +134,26 @@ def upload_details():
 
             # If valid, insert into the database
             db.aadhars.update_one(
-                {"name": named_entities["Name"]},
-                {"$set": {"fileLink": file_drive_links['file_0']}},
+                {"nameHash": hash_name(named_entities["Name"])},
+                {"$set": {"name": encrypt_name_aes(named_entities["Name"]), "fileLink": file_drive_links['file_0']}},
                 upsert=True
             )
         elif document_type == "PAN Card" and "Name" in named_entities:
             db.pans.update_one(
-                {"name": named_entities["Name"]},
-                {"$set": {"fileLink": file_drive_links['file_0']}},
+                {"nameHash": hash_name(named_entities["Name"])},
+                {"$set": {"name": encrypt_name_aes(named_entities["Name"]), "fileLink": file_drive_links['file_0']}},
                 upsert=True
             )
         elif document_type == "Credit Card" and "Name" in named_entities:
             db.creditcards.update_one(
-                {"name": named_entities["Name"]},
-                {"$set": {"fileLink": file_drive_links['file_0']}},
+                {"nameHash": hash_name(named_entities["Name"])},
+                {"$set": {"name": encrypt_name_aes(named_entities["Name"]), "fileLink": file_drive_links['file_0']}},
                 upsert=True
             )
         elif document_type == "Cheque" and "Name" in named_entities:
             db.cheques.update_one(
-                {"name": named_entities["Name"]},
-                {"$set": {"fileLink": file_drive_links['file_0']}},
+                {"nameHash": hash_name(named_entities["Name"])},
+                {"$set": {"name": encrypt_name_aes(named_entities["Name"]), "fileLink": file_drive_links['file_0']}},
                 upsert=True
             )
 

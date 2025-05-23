@@ -1,4 +1,4 @@
-import React, { useState } from "react"; 
+import React, { useState, useRef } from "react"; 
 import {
   Box,
   Button,
@@ -28,6 +28,7 @@ const UploadPage = () => {
     files: [],
   });
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
   const [alert, setAlert] = useState({ open: false, success: false, message: "" });
 
   const handleChange = (e) => {
@@ -67,13 +68,19 @@ const UploadPage = () => {
           success: true,
           message: "Successfully Processed",
         });
+        setTimeout(() => {
+          setAlert({ open: false, success: false, message: "" });
+        }, 3000);
       } else {
         setAlert({
           open: true,
           success: false,
           message: result.error || "An error occurred.",
         });
-      }
+        setTimeout(() => {
+          setAlert({ open: false, success: false, message: "" });
+        }, 3000);
+      }      
 
       setFormData({
         employeeId: "",
@@ -89,11 +96,14 @@ const UploadPage = () => {
       });
     } finally {
       setLoading(false);
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
     }
   };
 
   const handleCloseAlert = () => {
-    setAlert({ open: false, success: false, message: "" });
+    setAlert({ open: false, success: false, message: "" });;
   };
 
   const carouselSettings = {
@@ -196,6 +206,7 @@ const UploadPage = () => {
                   accept=".pdf"
                   multiple
                   onChange={handleFileChange}
+                  ref={fileInputRef}
                 />
               </Button>
               {formData.files.length > 0 && (
