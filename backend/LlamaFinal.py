@@ -14,7 +14,8 @@ load_dotenv()
 api_key = os.getenv("TOGETHER_API_KEY")
 if not api_key:
     exit("Error: TOGETHER_API_KEY environment variable is not set.")
-client = Together(api_key=api_key)
+os.environ["TOGETHER_API_KEY"] = api_key
+client = Together()
 
 getDescriptionPrompt = """You are tasked with extracting and classifying the document type from the provided image and outputting only the named entities in strict JSON format. Follow these rules strictly:
 1. Always include the document_type field with an exact and consistent value for the same type of document (e.g., "PAN Card" for all PAN cards).
