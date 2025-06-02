@@ -70,10 +70,10 @@ def upload_details():
             file_stream = BytesIO(file.read())
 
             # Process PDF and get structured data
-            output_folder = "temp_output"  # Temporary folder for images
-            json_output_path = None  # Placeholder for path
+            # output_folder = "temp_output"  # Temporary folder for images
+            # json_output_path = None  # Placeholder for path
 
-            document_data = process_pdf_with_llama(file_stream, output_folder, json_output_path)
+            document_data = process_pdf_with_llama(file_stream)
 
             if not document_data:
                 return jsonify({"error": "Failed to process the document."}), 500

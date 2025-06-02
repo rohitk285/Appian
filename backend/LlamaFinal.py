@@ -2,6 +2,9 @@ import fitz  # PyMuPDF
 import json
 import base64
 import os
+from pdf2image import convert_from_bytes
+from io import BytesIO
+from PIL import Image
 from together import Together
 import tempfile
 from dotenv import load_dotenv
@@ -88,19 +91,19 @@ Here are examples for different document types to guide your output:
 
 For every receipt or document, generate the response in the same format and structure, maintaining consistency for the document_type field. Always ensure the JSON format is valid."""
 
-def pdf_to_images(file_stream, output_folder, max_images=10):
+def pdf_to_images(file_stream, max_images=10):
     """
-    Convert each page of a PDF into separate image files.
+    Convert each page of a PDF into in-memory image files (BytesIO).
 
     Args:
     - file_stream (BytesIO): File-like object containing the PDF.
-    - output_folder (str): Path to the folder where images will be saved.
     - max_images (int): Maximum number of images to extract.
-    """
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
 
-    # Save the file stream to a temporary file
+    Returns:
+    - List[BytesIO]: List of image files in memory.
+    """
+    image_buffers = []
+
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
         temp_pdf.write(file_stream.read())
         temp_pdf_path = temp_pdf.name
@@ -109,13 +112,16 @@ def pdf_to_images(file_stream, output_folder, max_images=10):
     for page_num in range(min(len(pdf_document), max_images)):
         page = pdf_document[page_num]
         pix = page.get_pixmap(dpi=300)
-        image_path = os.path.join(output_folder, f"receipt_page_{page_num + 1}.png")
-        pix.save(image_path)
-        print(f"Saved: {image_path}")
+
+        img_buffer = BytesIO()
+        img_buffer.name = f"receipt_page_{page_num + 1}.png"
+        img_buffer.write(pix.tobytes("png"))
+        img_buffer.seek(0)
+        image_buffers.append(img_buffer)
 
     pdf_document.close()
-    os.remove(temp_pdf_path)  # Clean up the temporary file
-    print(f"PDF pages converted to images in '{output_folder}'.")
+    os.remove(temp_pdf_path)
+    return image_buffers
 
 # Function to encode the image to Base64
 def encode_image(image_path):
@@ -196,33 +202,36 @@ def convert_to_strict_json(response_content):
         return []
 
 # Main function to process PDF and extract data
-def process_pdf_with_llama(file_stream, output_folder, json_output_path=None):
+def process_pdf_with_llama(file_stream, json_output_path=None):
     """
-    Process a PDF file-like object and extract structured data.
+    Process a PDF file-like object and extract structured data using in-memory image processing.
 
     Args:
     - file_stream (BytesIO): File-like object containing the PDF.
-    - output_folder (str): Path to the folder where images will be saved.
     - json_output_path (str): Path for saving the JSON output.
-    """
-    pdf_to_images(file_stream, output_folder)
-    imageFiles = get_image_files(output_folder)
 
-    if not imageFiles:
-        print("No images found in the folder. Exiting.")
+    Returns:
+    - List[dict]: List of extracted structured data entries.
+    """
+    # Get in-memory images from PDF
+    images = pdf_to_images(file_stream)
+
+    if not images:
+        print("No images found in the PDF. Exiting.")
         return []
 
     all_responses = []
-
     valid_document_types = ["Aadhaar Card", "PAN Card", "Cheque", "Credit Card"]
 
-    for idx, imagePath in enumerate(imageFiles):
-        print(f"\nProcessing Image {idx + 1}/{len(imageFiles)}: {imagePath}")
+    for idx, image_io in enumerate(images):
+        print(f"\nProcessing Image {idx + 1}/{len(images)}")
 
-        base64_image = encode_image(imagePath)
-        if not base64_image:
-            print(f"Failed to encode image {imagePath}. Skipping.")
-            continue
+        # Convert image BytesIO to base64 string
+        image_io.seek(0)
+        image = Image.open(image_io)
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        base64_image = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
         valid_response = False
         while not valid_response:
@@ -268,7 +277,7 @@ def process_pdf_with_llama(file_stream, output_folder, json_output_path=None):
             parsed_response = convert_to_strict_json(response_content)
             normalized_response = normalize_json_response(parsed_response)
 
-            # Check if the response contains valid document types and required fields
+            # Check for valid document type and required fields
             for entry in normalized_response:
                 document_type = entry.get("document_type", "")
                 named_entities = entry.get("named_entities", {})
@@ -276,7 +285,6 @@ def process_pdf_with_llama(file_stream, output_folder, json_output_path=None):
                 if document_type == "Aadhaar Card" and "Aadhaar Number" not in named_entities:
                     print("Invalid Aadhaar Card: Missing Aadhaar Number")
                     continue
-
                 if document_type == "PAN Card" and "Permanent Account Number" not in named_entities:
                     print("Invalid PAN Card: Missing Permanent Account Number")
                     continue
@@ -284,7 +292,7 @@ def process_pdf_with_llama(file_stream, output_folder, json_output_path=None):
                 if document_type in valid_document_types:
                     valid_response = True
                     all_responses.append(entry)
-                    break  # Exit while loop if a valid response is found
+                    break
 
     if json_output_path:
         save_json_output(all_responses, json_output_path)
