@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.react
+    ports:
+      - "5173:5173"
+    networks:
+      - appnet
+
+  node-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.node
+    ports:
+      - "3000:3001"
+    depends_on:
+      - python-backend
+    networks:
+      - appnet
+
+  python-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.python
+    ports:
+      - "5000:5000"
+    networks:
+      - appnet
+
+networks:
+  appnet:
